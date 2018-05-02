@@ -16,8 +16,7 @@ case "$1" in
 		echo 'Starting...'
 		if [ ! -f ${ADDON_DIR}/installed ] || [ ! -f ${FIRMWARE_FILE1} ] || [ ! -f ${FIRMWARE_FILE2} ]; then
 			cd ${ADDON_DIR}
-			echo $!> $PIDFILE & ./install_rc > $LOGFILE 2>$ERRFILE
-			echo $!> $PIDFILE & ./install_sc > $LOGFILE 2>$ERRFILE
+			echo $!> $PIDFILE & ./install > $LOGFILE 2>$ERRFILE
 		else
 			echo "Nothing to do for $DEVICE"
 		fi
@@ -29,8 +28,7 @@ case "$1" in
 
 	uninstall)
     		cd ${ADDON_DIR}
-    		echo $!> $PIDFILE & ./uninstall_rc > $LOGFILE 2>$ERRFILE
-    		echo $!> $PIDFILE & ./uninstall_sc > $LOGFILE 2>$ERRFILE
+    		echo $!> $PIDFILE & ./uninstall > $LOGFILE 2>$ERRFILE
     		cd /
     		rm -rf $ADDON_DIR
     		rm -rf $WWW_DIR
