@@ -94,58 +94,25 @@ class MixDevice : public ChannelDevice<Hal, VirtBaseChannel<Hal, SwList0>, 8, Sw
     } cycle;
 
   public:
-    VirtChannel<Hal, SwChannel, SwList0>   swc1, swc2, swc3, swc4;
-    VirtChannel<Hal, SensChannel, SwList0> senc1, senc2, senc3, senc4;
+    VirtChannel<Hal, SwChannel, SwList0>   swChannel[4];
+    VirtChannel<Hal, SensChannel, SwList0> sensChannel[4];
   public:
     typedef ChannelDevice<Hal, VirtBaseChannel<Hal, SwList0>, 8, SwList0> DeviceType;
     MixDevice (const DeviceInfo& info, uint16_t addr) : DeviceType(info, addr), cycle(*this) {
-      DeviceType::registerChannel(swc1, 1);
-      DeviceType::registerChannel(swc2, 2);
-      DeviceType::registerChannel(swc3, 3);
-      DeviceType::registerChannel(swc4, 4);
-      DeviceType::registerChannel(senc1, 5);
-      DeviceType::registerChannel(senc2, 6);
-      DeviceType::registerChannel(senc3, 7);
-      DeviceType::registerChannel(senc4, 8);
+      for (int i = 0; i < 4; i++)
+        DeviceType::registerChannel(swChannel[i], i + 1);
+
+      for (int i = 0; i < 4; i++)
+        DeviceType::registerChannel(sensChannel[i], i + 5);
     }
     virtual ~MixDevice () {}
 
-    SwChannel& switchChannel (uint8_t chan)  {
-      switch (chan) {
-        case 1:
-          return swc1;
-          break;
-        case 2:
-          return swc2;
-          break;
-        case 3:
-          return swc3;
-          break;
-        case 4:
-          return swc4;
-          break;
-        default:
-          break;
-      }
+    SwChannel& switchChannel (uint8_t num)  {
+      return swChannel[ num - 1 ];
     }
 
-    SensChannel& sensorChannel (uint8_t chan)  {
-      switch (chan) {
-        case 1:
-          return senc1;
-          break;
-        case 2:
-          return senc2;
-          break;
-        case 3:
-          return senc3;
-          break;
-        case 4:
-          return senc4;
-          break;
-        default:
-          break;
-      }
+    SensChannel& sensorChannel (uint8_t num)  {
+      return sensChannel[ num - 1 ];
     }
 
     virtual void configChanged () {

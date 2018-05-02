@@ -106,12 +106,10 @@ class RemoteChannel : public Channel<Hal, RemoteList1, EmptyList, DefList4, PEER
       RemoteEventMsg& msg = (RemoteEventMsg&)this->device().message();
       msg.init(this->device().nextcount(), this->number(), repeatcnt, (s == longreleased || s == longpressed), this->device().battery().low());
       if ( s == released || s == longreleased) {
-        // send the message to every peer
         this->device().sendPeerEvent(msg, *this);
         repeatcnt++;
       }
       else if (s == longpressed) {
-        // broadcast the message
         this->device().broadcastPeerEvent(msg, *this);
       }
     }
@@ -144,59 +142,26 @@ class MixDevice : public ChannelDevice<Hal, VirtBaseChannel<Hal, SwList0>, 8, Sw
     } cycle;
 
   public:
-    VirtChannel<Hal, SwChannel, SwList0> swc1, swc2, swc3, swc4;
-    VirtChannel<Hal, RemoteChannel, SwList0> remc1, remc2, remc3, remc4;
+    VirtChannel<Hal, SwChannel, SwList0> swChannel[4];
+    VirtChannel<Hal, RemoteChannel, SwList0> remChannel[4];
   public:
     typedef ChannelDevice<Hal, VirtBaseChannel<Hal, SwList0>, 8, SwList0> DeviceType;
     MixDevice (const DeviceInfo& info, uint16_t addr) : DeviceType(info, addr), cycle(*this) {
-      DeviceType::registerChannel(swc1, 1);
-      DeviceType::registerChannel(swc2, 2);
-      DeviceType::registerChannel(swc3, 3);
-      DeviceType::registerChannel(swc4, 4);
-      DeviceType::registerChannel(remc1, 5);
-      DeviceType::registerChannel(remc2, 6);
-      DeviceType::registerChannel(remc3, 7);
-      DeviceType::registerChannel(remc4, 8);
+      for (int i = 0; i < 4; i++)
+        DeviceType::registerChannel(swChannel[i], i + 1);
+
+      for (int i = 0; i < 4; i++)
+        DeviceType::registerChannel(remChannel[i], i + 5);
     }
     virtual ~MixDevice () {}
 
-    SwChannel& switchChannel (uint8_t chan)  {
-      switch (chan) {
-        case 1:
-          return swc1;
-          break;
-        case 2:
-          return swc2;
-          break;
-        case 3:
-          return swc3;
-          break;
-        case 4:
-          return swc4;
-          break;
-        default:
-          break;
-      }
+    SwChannel& switchChannel (uint8_t num)  {
+      return swChannel[ num - 1 ];
     }
-    RemoteChannel& remoteChannel (uint8_t chan) {
-      switch (chan) {
-        case 5:
-          return remc1;
-          break;
-        case 6:
-          return remc2;
-          break;
-        case 7:
-          return remc3;
-          break;
-        case 8:
-          return remc4;
-          break;
-        default:
-          break;
-      }
+    
+    RemoteChannel& remoteChannel (uint8_t num)  {
+      return remChannel[ num - 1 ];
     }
-
 
     virtual void configChanged () {
       if ( /*this->getSwList0().cycleInfoMsg() ==*/ true ) {
