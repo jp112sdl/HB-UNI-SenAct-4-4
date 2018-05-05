@@ -106,10 +106,12 @@ class RemoteChannel : public Channel<Hal, RemoteList1, EmptyList, DefList4, PEER
       RemoteEventMsg& msg = (RemoteEventMsg&)this->device().message();
       msg.init(this->device().nextcount(), this->number(), repeatcnt, (s == longreleased || s == longpressed), this->device().battery().low());
       if ( s == released || s == longreleased) {
+        // send the message to every peer
         this->device().sendPeerEvent(msg, *this);
         repeatcnt++;
       }
       else if (s == longpressed) {
+        // broadcast the message
         this->device().broadcastPeerEvent(msg, *this);
       }
     }
@@ -142,14 +144,14 @@ class MixDevice : public ChannelDevice<Hal, VirtBaseChannel<Hal, SwList0>, 8, Sw
     } cycle;
 
   public:
-    VirtChannel<Hal, SwChannel, SwList0> swChannel[4];
+    VirtChannel<Hal, SwChannel, SwList0>   swChannel[4];
     VirtChannel<Hal, RemoteChannel, SwList0> remChannel[4];
   public:
     typedef ChannelDevice<Hal, VirtBaseChannel<Hal, SwList0>, 8, SwList0> DeviceType;
     MixDevice (const DeviceInfo& info, uint16_t addr) : DeviceType(info, addr), cycle(*this) {
       for (int i = 0; i < 4; i++)
         DeviceType::registerChannel(swChannel[i], i + 1);
-
+        
       for (int i = 0; i < 4; i++)
         DeviceType::registerChannel(remChannel[i], i + 5);
     }
@@ -160,7 +162,7 @@ class MixDevice : public ChannelDevice<Hal, VirtBaseChannel<Hal, SwList0>, 8, Sw
     }
     
     RemoteChannel& remoteChannel (uint8_t num)  {
-      return remChannel[ num - 1 ];
+      return remChannel[num - 5];
     }
 
     virtual void configChanged () {
@@ -194,7 +196,6 @@ void initPeerings (bool first) {
 void setup () {
   DINIT(57600, ASKSIN_PLUS_PLUS_IDENTIFIER);
   bool first = sdev.init(hal);
-
   for (uint8_t i = 1; i <= 4; i++) {
     sdev.switchChannel(i).init(RELAY_PINS[i]);
   }
@@ -217,3 +218,4 @@ void loop() {
     hal.activity.savePower<Idle<> >(hal);
   }
 }
+

@@ -112,7 +112,7 @@ class MixDevice : public ChannelDevice<Hal, VirtBaseChannel<Hal, SwList0>, 8, Sw
     }
 
     SensChannel& sensorChannel (uint8_t num)  {
-      return sensChannel[ num - 1 ];
+      return sensChannel[ num - 5 ];
     }
 
     virtual void configChanged () {
@@ -151,8 +151,8 @@ void setup () {
   }
 
   const uint8_t posmap[4] = {Position::State::PosA, Position::State::PosB, Position::State::PosA, Position::State::PosB};
-  for (uint8_t i = 1; i <= 4; i++) {
-    sdev.sensorChannel(i).init(SENS_PINS[i], SENS_PINS[i], SABOTAGE_PIN, posmap);
+  for (uint8_t i = 5; i <= 8; i++) {
+    sdev.sensorChannel(i).init(SENS_PINS[i - 5], SENS_PINS[i - 5], SABOTAGE_PIN, posmap);
   }
 
   buttonISR(cfgBtn, CONFIG_BUTTON_PIN);
