@@ -14,8 +14,8 @@
 * Draht, um die Komponenten zu verbinden
 
 ## Verdrahtung
-#### - folgt
 
+![wiring](Images/wiring.png)
 
 
 ## Code flashen
