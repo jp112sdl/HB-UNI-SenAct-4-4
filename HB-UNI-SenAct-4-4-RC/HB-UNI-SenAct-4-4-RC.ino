@@ -14,16 +14,15 @@
 #include <Switch.h>
 #include <MultiChannelDevice.h>
 
-#define LED_PIN 4
-#define CONFIG_BUTTON_PIN 8
-
-const uint8_t RELAY_PINS[4] = {14, 15, 16, 17};
-const uint8_t REMOTE_PINS[4] = {5, 6, 7, 9};
+const uint8_t RELAY_PINS[4]  = {14, 15, 16, 17}; // 14 = A0 ... 17 = A3
+const uint8_t REMOTE_PINS[4] = { 5,  6,  7,  9};
+#define       LED_PIN            4
+#define       CONFIG_BUTTON_PIN  8
 
 // number of available peers per channel
-
 #define PEERS_PER_SwitchChannel  4
 #define PEERS_PER_RemoteChannel  4
+#define CYCLETIME seconds2ticks(60UL * 24 * 0.88) // at least one message per day
 
 #define remISR(device,chan,pin) class device##chan##ISRHandler { \
     public: \
@@ -41,7 +40,7 @@ using namespace as;
 // define all device properties
 const struct DeviceInfo PROGMEM devinfo = {
   {0xf3, 0x32, 0x01},     // Device ID
-  "JPSENACT91",           // Device Serial
+  "JPSENACT11",           // Device Serial
   {0xf3, 0x32},           // Device Model
   0x10,                   // Firmware Version
   as::DeviceType::Switch, // Device Type
@@ -106,12 +105,10 @@ class RemoteChannel : public Channel<Hal, RemoteList1, EmptyList, DefList4, PEER
       RemoteEventMsg& msg = (RemoteEventMsg&)this->device().message();
       msg.init(this->device().nextcount(), this->number(), repeatcnt, (s == longreleased || s == longpressed), this->device().battery().low());
       if ( s == released || s == longreleased) {
-        // send the message to every peer
         this->device().sendPeerEvent(msg, *this);
         repeatcnt++;
       }
       else if (s == longpressed) {
-        // broadcast the message
         this->device().broadcastPeerEvent(msg, *this);
       }
     }
@@ -129,7 +126,6 @@ class RemoteChannel : public Channel<Hal, RemoteList1, EmptyList, DefList4, PEER
 typedef SwitchChannel<Hal, PEERS_PER_SwitchChannel, SwList0>  SwChannel;
 
 class MixDevice : public ChannelDevice<Hal, VirtBaseChannel<Hal, SwList0>, 8, SwList0> {
-#define CYCLETIME seconds2ticks(60UL*10) // at least one message per day
     class CycleInfoAlarm : public Alarm {
         MixDevice& dev;
       public:

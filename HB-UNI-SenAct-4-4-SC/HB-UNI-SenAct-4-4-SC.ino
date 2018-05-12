@@ -14,18 +14,16 @@
 #include <Switch.h>
 #include <ThreeState.h>
 
-#define LED_PIN 4
-#define CONFIG_BUTTON_PIN 8
-
-const uint8_t RELAY_PINS[4] = {14, 15, 16, 17};
-const uint8_t SENS_PINS[4] = {3, 5, 6, 7};
-
-#define SABOTAGE_PIN 9
+const uint8_t RELAY_PINS[4] = {14, 15, 16, 17}; // 14 = A0 ... 17 = A3
+const uint8_t SENS_PINS[4]  = { 3,  5,  6,  7};
+#define       SABOTAGE_PIN      9
+#define       LED_PIN           4
+#define       CONFIG_BUTTON_PIN 8
 
 // number of available peers per channel
-
-#define PEERS_PER_SwitchChannel  6
-#define PEERS_PER_SENSCHANNEL    6
+#define PEERS_PER_SwitchChannel  4
+#define PEERS_PER_SENSCHANNEL    4
+#define CYCLETIME seconds2ticks(60UL * 24 * 0.88) // at least one message per day
 
 // all library classes are placed in the namespace 'as'
 using namespace as;
@@ -79,7 +77,6 @@ typedef SwitchChannel<Hal, PEERS_PER_SwitchChannel, SwList0>  SwChannel;
 typedef ThreeStateChannel<Hal, SwList0, SensList1, DefList4, PEERS_PER_SENSCHANNEL> SensChannel;
 
 class MixDevice : public ChannelDevice<Hal, VirtBaseChannel<Hal, SwList0>, 8, SwList0> {
-#define CYCLETIME seconds2ticks(60UL*10) // at least one message per day
     class CycleInfoAlarm : public Alarm {
         MixDevice& dev;
       public:
