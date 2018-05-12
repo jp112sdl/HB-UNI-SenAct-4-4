@@ -51,6 +51,6 @@ Button "HM Gerät anlernen" startet den Anlernmodus.<br>
 Nun ist der Taster (an Pin D8) kurz zu drücken.<br>
 Die LED (an Pin D4) leuchtet/blinkt für einen Moment.<br>
 Anschließend ist das Gerät im Posteingang zu finden.<br>
-Dort auf "Fertig" geklickt, wird es nun in der Geräteübersicht aufgeführt.<br>
+Dort auf "Fertig" geklickt, wird es nun (jeweils eines der beiden, je nach Projektdatei) in der Geräteübersicht aufgeführt.<br>
 ![addon](Images/ccu_geraete.png)
 <br><br>
