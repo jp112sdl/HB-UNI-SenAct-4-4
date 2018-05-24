@@ -14,16 +14,24 @@
 #include <Switch.h>
 #include <ThreeState.h>
 
-const uint8_t RELAY_PINS[4] = {14, 15, 16, 17}; // 14 = A0 ... 17 = A3
-const uint8_t SENS_PINS[4]  = { 3,  5,  6,  7};
-#define       SABOTAGE_PIN      9
-#define       LED_PIN           4
-#define       CONFIG_BUTTON_PIN 8
+#define  RELAY_PIN_1 14
+#define  RELAY_PIN_2 15
+#define  RELAY_PIN_3 16
+#define  RELAY_PIN_4 17
+
+#define  SENS_PIN_1  5
+#define  SENS_PIN_2  6
+#define  SENS_PIN_3  7
+#define  SENS_PIN_4  9
+
+#define  SABOTAGE_PIN      9
+#define  LED_PIN           4
+#define  CONFIG_BUTTON_PIN 8
 
 // number of available peers per channel
-#define PEERS_PER_SwitchChannel  4
-#define PEERS_PER_SENSCHANNEL    4
-#define CYCLETIME seconds2ticks(60UL * 24 * 0.88) // at least one message per day
+#define PEERS_PER_SwitchChannel  6
+#define PEERS_PER_SENSCHANNEL    6
+#define CYCLETIME seconds2ticks(60UL * 3 * 0.88)
 
 // all library classes are placed in the namespace 'as'
 using namespace as;
@@ -91,25 +99,56 @@ class MixDevice : public ChannelDevice<Hal, VirtBaseChannel<Hal, SwList0>, 8, Sw
     } cycle;
 
   public:
-    VirtChannel<Hal, SwChannel, SwList0>   swChannel[4];
-    VirtChannel<Hal, SensChannel, SwList0> sensChannel[4];
+    VirtChannel<Hal, SwChannel, SwList0>   swChannel1,   swChannel2,   swChannel3,   swChannel4;
+    VirtChannel<Hal, SensChannel, SwList0> sensChannel5, sensChannel6, sensChannel7, sensChannel8;
   public:
     typedef ChannelDevice<Hal, VirtBaseChannel<Hal, SwList0>, 8, SwList0> DeviceType;
     MixDevice (const DeviceInfo& info, uint16_t addr) : DeviceType(info, addr), cycle(*this) {
-      for (int i = 0; i < 4; i++)
-        DeviceType::registerChannel(swChannel[i], i + 1);
+      DeviceType::registerChannel(swChannel1, 1);
+      DeviceType::registerChannel(swChannel2, 2);
+      DeviceType::registerChannel(swChannel3, 3);
+      DeviceType::registerChannel(swChannel4, 4);
 
-      for (int i = 0; i < 4; i++)
-        DeviceType::registerChannel(sensChannel[i], i + 5);
+      DeviceType::registerChannel(sensChannel5, 5);
+      DeviceType::registerChannel(sensChannel6, 6);
+      DeviceType::registerChannel(sensChannel7, 7);
+      DeviceType::registerChannel(sensChannel8, 8);
     }
     virtual ~MixDevice () {}
 
+
     SwChannel& switchChannel (uint8_t num)  {
-      return swChannel[ num - 1 ];
+      switch (num) {
+        case 1:
+          return swChannel1;
+          break;
+        case 2:
+          return swChannel2;
+          break;
+        case 3:
+          return swChannel3;
+          break;
+        case 4:
+          return swChannel4;
+          break;
+      }
     }
 
     SensChannel& sensorChannel (uint8_t num)  {
-      return sensChannel[ num - 5 ];
+      switch (num) {
+        case 5:
+          return sensChannel5;
+          break;
+        case 6:
+          return sensChannel6;
+          break;
+        case 7:
+          return sensChannel7;
+          break;
+        case 8:
+          return sensChannel8;
+          break;
+      }
     }
 
     virtual void configChanged () {
@@ -143,14 +182,16 @@ void initPeerings (bool first) {
 void setup () {
   DINIT(57600, ASKSIN_PLUS_PLUS_IDENTIFIER);
   bool first = sdev.init(hal);
-  for (uint8_t i = 0; i <= 4; i++) {
-    sdev.switchChannel(i + 1).init(RELAY_PINS[i], false);
-  }
+  sdev.switchChannel(1).init(RELAY_PIN_1, false);
+  sdev.switchChannel(2).init(RELAY_PIN_2, false);
+  sdev.switchChannel(3).init(RELAY_PIN_3, false);
+  sdev.switchChannel(4).init(RELAY_PIN_4, false);
 
   const uint8_t posmap[4] = {Position::State::PosA, Position::State::PosB, Position::State::PosA, Position::State::PosB};
-  for (uint8_t i = 5; i <= 8; i++) {
-    sdev.sensorChannel(i).init(SENS_PINS[i - 5], SENS_PINS[i - 5], SABOTAGE_PIN, posmap);
-  }
+  sdev.sensorChannel(5).init(SENS_PIN_1, SENS_PIN_1, SABOTAGE_PIN, posmap);
+  sdev.sensorChannel(6).init(SENS_PIN_2, SENS_PIN_2, SABOTAGE_PIN, posmap);
+  sdev.sensorChannel(7).init(SENS_PIN_3, SENS_PIN_3, SABOTAGE_PIN, posmap);
+  sdev.sensorChannel(8).init(SENS_PIN_4, SENS_PIN_4, SABOTAGE_PIN, posmap);
 
   buttonISR(cfgBtn, CONFIG_BUTTON_PIN);
 

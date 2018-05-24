@@ -14,15 +14,23 @@
 #include <Switch.h>
 #include <MultiChannelDevice.h>
 
-const uint8_t RELAY_PINS[4]  = {14, 15, 16, 17}; // 14 = A0 ... 17 = A3
-const uint8_t REMOTE_PINS[4] = { 5,  6,  7,  9};
-#define       LED_PIN            4
-#define       CONFIG_BUTTON_PIN  8
+#define RELAY_PIN_1 14
+#define RELAY_PIN_2 15
+#define RELAY_PIN_3 16
+#define RELAY_PIN_4 17
+
+#define REMOTE_PIN_1 5
+#define REMOTE_PIN_2 6
+#define REMOTE_PIN_3 7
+#define REMOTE_PIN_4 9
+
+#define LED_PIN            4
+#define CONFIG_BUTTON_PIN  8
 
 // number of available peers per channel
 #define PEERS_PER_SwitchChannel  4
 #define PEERS_PER_RemoteChannel  4
-#define CYCLETIME seconds2ticks(60UL * 24 * 0.88) // at least one message per day
+#define CYCLETIME seconds2ticks(60UL * 3 * 0.88)
 
 #define remISR(device,chan,pin) class device##chan##ISRHandler { \
     public: \
@@ -140,25 +148,55 @@ class MixDevice : public ChannelDevice<Hal, VirtBaseChannel<Hal, SwList0>, 8, Sw
     } cycle;
 
   public:
-    VirtChannel<Hal, SwChannel, SwList0>   swChannel[4];
-    VirtChannel<Hal, RemoteChannel, SwList0> remChannel[4];
+    VirtChannel<Hal, SwChannel, SwList0>     swChannel1,  swChannel2,  swChannel3,  swChannel4;
+    VirtChannel<Hal, RemoteChannel, SwList0> remChannel5, remChannel6, remChannel7, remChannel8;
   public:
     typedef ChannelDevice<Hal, VirtBaseChannel<Hal, SwList0>, 8, SwList0> DeviceType;
     MixDevice (const DeviceInfo& info, uint16_t addr) : DeviceType(info, addr), cycle(*this) {
-      for (int i = 0; i < 4; i++)
-        DeviceType::registerChannel(swChannel[i], i + 1);
-        
-      for (int i = 0; i < 4; i++)
-        DeviceType::registerChannel(remChannel[i], i + 5);
+      DeviceType::registerChannel(swChannel1, 1);
+      DeviceType::registerChannel(swChannel2, 2);
+      DeviceType::registerChannel(swChannel3, 3);
+      DeviceType::registerChannel(swChannel4, 4);
+
+      DeviceType::registerChannel(remChannel5, 5);
+      DeviceType::registerChannel(remChannel6, 6);
+      DeviceType::registerChannel(remChannel7, 7);
+      DeviceType::registerChannel(remChannel8, 8);
     }
     virtual ~MixDevice () {}
 
     SwChannel& switchChannel (uint8_t num)  {
-      return swChannel[ num - 1 ];
+      switch (num) {
+        case 1:
+          return swChannel1;
+          break;
+        case 2:
+          return swChannel2;
+          break;
+        case 3:
+          return swChannel3;
+          break;
+        case 4:
+          return swChannel4;
+          break;
+      }
     }
-    
+
     RemoteChannel& remoteChannel (uint8_t num)  {
-      return remChannel[num - 5];
+      switch (num) {
+        case 5:
+          return remChannel5;
+          break;
+        case 6:
+          return remChannel6;
+          break;
+        case 7:
+          return remChannel7;
+          break;
+        case 8:
+          return remChannel8;
+          break;
+      }
     }
 
     virtual void configChanged () {
@@ -192,14 +230,15 @@ void initPeerings (bool first) {
 void setup () {
   DINIT(57600, ASKSIN_PLUS_PLUS_IDENTIFIER);
   bool first = sdev.init(hal);
-  for (uint8_t i = 0; i <= 4; i++) {
-    sdev.switchChannel(i + 1).init(RELAY_PINS[i], false);
-  }
+  sdev.switchChannel(1).init(RELAY_PIN_1, false);
+  sdev.switchChannel(2).init(RELAY_PIN_2, false);
+  sdev.switchChannel(3).init(RELAY_PIN_3, false);
+  sdev.switchChannel(4).init(RELAY_PIN_4, false);
 
-  remISR(sdev, 5, REMOTE_PINS[0]);
-  remISR(sdev, 6, REMOTE_PINS[1]);
-  remISR(sdev, 7, REMOTE_PINS[2]);
-  remISR(sdev, 8, REMOTE_PINS[3]);
+  remISR(sdev, 5, REMOTE_PIN_1);
+  remISR(sdev, 6, REMOTE_PIN_2);
+  remISR(sdev, 7, REMOTE_PIN_3);
+  remISR(sdev, 8, REMOTE_PIN_4);
 
   buttonISR(cfgBtn, CONFIG_BUTTON_PIN);
 
