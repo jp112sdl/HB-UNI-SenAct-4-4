@@ -192,8 +192,8 @@ void initPeerings (bool first) {
 void setup () {
   DINIT(57600, ASKSIN_PLUS_PLUS_IDENTIFIER);
   bool first = sdev.init(hal);
-  for (uint8_t i = 1; i <= 4; i++) {
-    sdev.switchChannel(i).init(RELAY_PINS[i], false);
+  for (uint8_t i = 0; i <= 4; i++) {
+    sdev.switchChannel(i + 1).init(RELAY_PINS[i], false);
   }
 
   remISR(sdev, 5, REMOTE_PINS[0]);
