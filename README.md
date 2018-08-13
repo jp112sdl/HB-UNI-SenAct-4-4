@@ -31,6 +31,8 @@
     - Prozessor: ATmega328P (3.3V 8MHz) 
     - Port: entsprechend FTDI Adapter
 einstellen
+- bei Batteriebetrieb: Kommentarzeichen bei `//#define USE_BATTERY_MODE` entfernen
+  - Achtung: Jeder Schaltbefehl benötigt ein BURST-Telegramm -> DutyCycle!
 - Menü "Sketch" -> "Hochladen" auswählen.
 
 ## Addon installieren
