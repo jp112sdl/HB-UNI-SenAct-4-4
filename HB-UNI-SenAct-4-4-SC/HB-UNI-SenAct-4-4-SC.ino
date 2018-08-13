@@ -1,6 +1,8 @@
 //- -----------------------------------------------------------------------------------------------------------------------
 // AskSin++
 // 2016-10-31 papa Creative Commons - http://creativecommons.org/licenses/by-nc-sa/3.0/de/
+// 2018-08-13 jp112sdl Creative Commons - http://creativecommons.org/licenses/by-nc-sa/3.0/de/
+// special thanks to "klassisch" from homematic-forum.de
 //- -----------------------------------------------------------------------------------------------------------------------
 
 // define this to read the device id, serial and device type from bootloader section
@@ -10,37 +12,49 @@
 #include <EnableInterrupt.h>
 #include <AskSinPP.h>
 #include <LowPower.h>
-
 #include <Switch.h>
 #include <ThreeState.h>
 
-#define  RELAY_PIN_1 14
-#define  RELAY_PIN_2 15
-#define  RELAY_PIN_3 16
-#define  RELAY_PIN_4 17
+//#define USE_BATTERY_MODE       // bei Batteriebetrieb
+#define LOWBAT_VOLTAGE     22    // Batterie-Leermeldung bei Unterschreiten der Spannung von U * 10
 
-#define  SENS_PIN_1  5
-#define  SENS_PIN_2  6
-#define  SENS_PIN_3  7
-#define  SENS_PIN_4  9
+#define RELAY_PIN_1 14
+#define RELAY_PIN_2 15
+#define RELAY_PIN_3 16
+#define RELAY_PIN_4 17
 
-#define  SABOTAGE_PIN      9
-#define  LED_PIN           4
-#define  CONFIG_BUTTON_PIN 8
+#define SENS_PIN_1  5
+#define SENS_PIN_2  6
+#define SENS_PIN_3  7
+#define SENS_PIN_4  9
+
+#define SABOTAGE_PIN      3
+
+#define LED_PIN           4
+#define CONFIG_BUTTON_PIN 8
 
 // number of available peers per channel
 #define PEERS_PER_SwitchChannel  6
 #define PEERS_PER_SENSCHANNEL    6
-#define CYCLETIME seconds2ticks(60UL * 3 * 0.88)
+
+#ifdef USE_BATTERY_MODE
+#define battOp_ARGUMENT BatterySensor
+#define DEV_MODEL 0x33
+#define CYCLETIME seconds2ticks(60UL * 60 * 12 * 0.88) // 60 seconds * 60 (= minutes) * 12 (=hours) * corrective factor
+#else
+#define battOp_ARGUMENT NoBattery
+#define DEV_MODEL 0x31
+#define CYCLETIME seconds2ticks(60UL * 3 * 0.88)  // every 3 minutes
+#endif
 
 // all library classes are placed in the namespace 'as'
 using namespace as;
 
 // define all device properties
 const struct DeviceInfo PROGMEM devinfo = {
-  {0xf3, 0x31, 0x01},     // Device ID
+  {0xf3, DEV_MODEL, 0x01},// Device ID
   "JPSENACT01",           // Device Serial
-  {0xf3, 0x31},           // Device Model
+  {0xf3, DEV_MODEL},      // Device Model
   0x10,                   // Firmware Version
   as::DeviceType::Switch, // Device Type
   {0x01, 0x00}            // Info Bytes
@@ -50,8 +64,11 @@ const struct DeviceInfo PROGMEM devinfo = {
    Configure the used hardware
 */
 typedef AvrSPI<10, 11, 12, 13> RadioSPI;
-typedef AskSin<StatusLed<LED_PIN>, NoBattery, Radio<RadioSPI, 2> > Hal;
+typedef AskSin<StatusLed<LED_PIN>, battOp_ARGUMENT, Radio<RadioSPI, 2> > Hal;
 Hal hal;
+#ifdef USE_BATTERY_MODE
+BurstDetector<Hal> bd(hal); // to wake by remote burst, taken from HM-LC-SW1-BA-PCB.ino
+#endif
 
 DEFREGISTER(Reg0, MASTERID_REGS, DREG_INTKEY, DREG_CYCLICINFOMSG, DREG_SABOTAGEMSG)
 class SwList0 : public RegList0<Reg0> {
@@ -196,6 +213,15 @@ void setup () {
   buttonISR(cfgBtn, CONFIG_BUTTON_PIN);
 
   initPeerings(first);
+
+#ifdef USE_BATTERY_MODE
+  bd.enable(sysclock);
+  hal.activity.stayAwake(seconds2ticks(15));
+  hal.battery.low(LOWBAT_VOLTAGE);
+  // measure battery every 12 hours
+  hal.battery.init(seconds2ticks(60UL * 60 * 12 * 0.88), sysclock);
+#endif
+
   sdev.initDone();
 }
 
@@ -203,6 +229,10 @@ void loop() {
   bool worked = hal.runready();
   bool poll = sdev.pollRadio();
   if ( worked == false && poll == false ) {
+#ifdef USE_BATTERY_MODE
+    hal.activity.savePower<Sleep<> >(hal);
+#else
     hal.activity.savePower<Idle<> >(hal);
+#endif
   }
 }

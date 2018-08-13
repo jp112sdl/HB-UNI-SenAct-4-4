@@ -1,6 +1,8 @@
 //- -----------------------------------------------------------------------------------------------------------------------
 // AskSin++
 // 2016-10-31 papa Creative Commons - http://creativecommons.org/licenses/by-nc-sa/3.0/de/
+// 2018-08-13 jp112sdl Creative Commons - http://creativecommons.org/licenses/by-nc-sa/3.0/de/
+// special thanks to "klassisch" from homematic-forum.de
 //- -----------------------------------------------------------------------------------------------------------------------
 
 // define this to read the device id, serial and device type from bootloader section
@@ -10,9 +12,11 @@
 #include <EnableInterrupt.h>
 #include <AskSinPP.h>
 #include <LowPower.h>
-
 #include <Switch.h>
 #include <MultiChannelDevice.h>
+
+//#define USE_BATTERY_MODE       // bei Batteriebetrieb
+#define LOWBAT_VOLTAGE     22    // Batterie-Leermeldung bei Unterschreiten der Spannung von U * 10
 
 #define RELAY_PIN_1 14
 #define RELAY_PIN_2 15
@@ -30,7 +34,16 @@
 // number of available peers per channel
 #define PEERS_PER_SwitchChannel  4
 #define PEERS_PER_RemoteChannel  4
-#define CYCLETIME seconds2ticks(60UL * 3 * 0.88)
+
+#ifdef USE_BATTERY_MODE
+#define battOp_ARGUMENT BatterySensor
+#define DEV_MODEL 0x34
+#define CYCLETIME seconds2ticks(60UL * 60 * 12 * 0.88) // 60 seconds * 60 (= minutes) * 12 (=hours) * corrective factor
+#else
+#define battOp_ARGUMENT NoBattery
+#define DEV_MODEL 0x32
+#define CYCLETIME seconds2ticks(60UL * 3 * 0.88)  // every 3 minutes
+#endif
 
 #define remISR(device,chan,pin) class device##chan##ISRHandler { \
     public: \
@@ -47,20 +60,22 @@ using namespace as;
 
 // define all device properties
 const struct DeviceInfo PROGMEM devinfo = {
-  {0xf3, 0x32, 0x01},     // Device ID
-  "JPSENACT11",           // Device Serial
-  {0xf3, 0x32},           // Device Model
+  {0xf3, DEV_MODEL, 0x01},// Device ID
+  "JPSENACT01",           // Device Serial
+  {0xf3, DEV_MODEL},      // Device Model
   0x10,                   // Firmware Version
   as::DeviceType::Switch, // Device Type
   {0x01, 0x00}            // Info Bytes
 };
-
 /**
    Configure the used hardware
 */
 typedef AvrSPI<10, 11, 12, 13> RadioSPI;
-typedef AskSin<StatusLed<LED_PIN>, NoBattery, Radio<RadioSPI, 2> > Hal;
+typedef AskSin<StatusLed<LED_PIN>, battOp_ARGUMENT, Radio<RadioSPI, 2> > Hal;
 Hal hal;
+#ifdef USE_BATTERY_MODE
+BurstDetector<Hal> bd(hal); // to wake by remote burst, taken from HM-LC-SW1-BA-PCB.ino
+#endif
 
 DEFREGISTER(Reg0, MASTERID_REGS, DREG_INTKEY, DREG_CYCLICINFOMSG)
 class SwList0 : public RegList0<Reg0> {
@@ -72,7 +87,6 @@ class SwList0 : public RegList0<Reg0> {
       cycleInfoMsg(true);
     }
 };
-
 
 DEFREGISTER(RemoteReg1, CREG_LONGPRESSTIME, CREG_AES_ACTIVE, CREG_DOUBLEPRESSTIME)
 class RemoteList1 : public RegList1<RemoteReg1> {
@@ -111,6 +125,7 @@ class RemoteChannel : public Channel<Hal, RemoteList1, EmptyList, DefList4, PEER
       DHEX(BaseChannel::number());
       Button::state(s);
       RemoteEventMsg& msg = (RemoteEventMsg&)this->device().message();
+      DPRINT("BATTERY IS LOW? "); DDECLN(this->device().battery().low());
       msg.init(this->device().nextcount(), this->number(), repeatcnt, (s == longreleased || s == longpressed), this->device().battery().low());
       if ( s == released || s == longreleased) {
         this->device().sendPeerEvent(msg, *this);
@@ -243,6 +258,13 @@ void setup () {
   buttonISR(cfgBtn, CONFIG_BUTTON_PIN);
 
   initPeerings(first);
+#ifdef USE_BATTERY_MODE
+  bd.enable(sysclock);
+  hal.activity.stayAwake(seconds2ticks(15));
+  hal.battery.low(LOWBAT_VOLTAGE);
+  // measure battery every 12 hours
+  hal.battery.init(seconds2ticks(60UL * 60 * 12 * 0.88), sysclock);
+#endif
   sdev.initDone();
 }
 
@@ -250,7 +272,10 @@ void loop() {
   bool worked = hal.runready();
   bool poll = sdev.pollRadio();
   if ( worked == false && poll == false ) {
+#ifdef USE_BATTERY_MODE
+    hal.activity.savePower<Sleep<> >(hal);
+#else
     hal.activity.savePower<Idle<> >(hal);
+#endif
   }
 }
-
