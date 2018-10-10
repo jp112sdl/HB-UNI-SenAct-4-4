@@ -28,10 +28,7 @@
 #define SENS_PIN_3  7
 #define SENS_PIN_4  9
 
-#define SABOTAGE_PIN_1      3
-#define SABOTAGE_PIN_2      A4
-#define SABOTAGE_PIN_3      A5
-#define SABOTAGE_PIN_4      A6
+#define SABOTAGE_PIN_1    3
 
 #define LED_PIN           4
 #define CONFIG_BUTTON_PIN 8
@@ -209,9 +206,9 @@ void setup () {
 
   const uint8_t posmap[4] = {Position::State::PosA, Position::State::PosB, Position::State::PosA, Position::State::PosB};
   sdev.sensorChannel(5).init(SENS_PIN_1, SENS_PIN_1, SABOTAGE_PIN_1, posmap);
-  sdev.sensorChannel(6).init(SENS_PIN_2, SENS_PIN_2, SABOTAGE_PIN_2, posmap);
-  sdev.sensorChannel(7).init(SENS_PIN_3, SENS_PIN_3, SABOTAGE_PIN_3, posmap);
-  sdev.sensorChannel(8).init(SENS_PIN_4, SENS_PIN_4, SABOTAGE_PIN_4, posmap);
+  sdev.sensorChannel(6).init(SENS_PIN_2, SENS_PIN_2, SABOTAGE_PIN_1, posmap);
+  sdev.sensorChannel(7).init(SENS_PIN_3, SENS_PIN_3, SABOTAGE_PIN_1, posmap);
+  sdev.sensorChannel(8).init(SENS_PIN_4, SENS_PIN_4, SABOTAGE_PIN_1, posmap);
 
   buttonISR(cfgBtn, CONFIG_BUTTON_PIN);
 
