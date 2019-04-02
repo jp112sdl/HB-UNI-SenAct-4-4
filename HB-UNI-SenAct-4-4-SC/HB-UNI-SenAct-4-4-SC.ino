@@ -7,6 +7,7 @@
 
 // define this to read the device id, serial and device type from bootloader section
 // #define USE_OTA_BOOTLOADER
+#define USE_WOR
 
 #define EI_NOTEXTERNAL
 #include <EnableInterrupt.h>
@@ -66,9 +67,6 @@ const struct DeviceInfo PROGMEM devinfo = {
 typedef AvrSPI<10, 11, 12, 13> RadioSPI;
 typedef AskSin<StatusLed<LED_PIN>, battOp_ARGUMENT, Radio<RadioSPI, 2> > Hal;
 Hal hal;
-#ifdef USE_BATTERY_MODE
-BurstDetector<Hal> bd(hal); // to wake by remote burst, taken from HM-LC-SW1-BA-PCB.ino
-#endif
 
 DEFREGISTER(Reg0, MASTERID_REGS, DREG_INTKEY, DREG_CYCLICINFOMSG, DREG_SABOTAGEMSG)
 class SwList0 : public RegList0<Reg0> {
@@ -215,7 +213,6 @@ void setup () {
   initPeerings(first);
 
 #ifdef USE_BATTERY_MODE
-  bd.enable(sysclock);
   hal.activity.stayAwake(seconds2ticks(15));
   hal.battery.low(LOWBAT_VOLTAGE);
   // measure battery every 12 hours
