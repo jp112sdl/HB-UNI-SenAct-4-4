@@ -4,6 +4,7 @@
 // 2018-08-13 jp112sdl Creative Commons - http://creativecommons.org/licenses/by-nc-sa/3.0/de/
 // special thanks to "klassisch" from homematic-forum.de
 //- -----------------------------------------------------------------------------------------------------------------------
+// ci-test=yes board=328p aes=no
 
 // define this to read the device id, serial and device type from bootloader section
 // #define USE_OTA_BOOTLOADER
