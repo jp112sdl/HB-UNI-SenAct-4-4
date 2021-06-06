@@ -36,6 +36,7 @@
 #define CONFIG_BUTTON_PIN 8
 
 // number of available peers per channel
+//#define CREATE_INTERNAL_PEERINGS
 #define PEERS_PER_SwitchChannel  6
 #define PEERS_PER_SENSCHANNEL    6
 
@@ -186,12 +187,18 @@ ConfigButton<MixDevice> cfgBtn(sdev);
 void initPeerings (bool first) {
   // create internal peerings - CCU2 needs this
   if ( first == true ) {
+#ifdef CREATE_INTERNAL_PEERINGS    
     HMID devid;
     sdev.getDeviceID(devid);
     for ( uint8_t i = 1; i <= 4; ++i ) {
-      Peer ipeer(devid, i);
-      sdev.channel(i).peer(ipeer);
+      Peer ipeer(devid, i + 4);
+      sdev.switchChannel(i).peer(ipeer);
     }
+    for ( uint8_t i = 1; i <= 4; ++i ) {
+      Peer ipeer(devid, i);
+      sdev.sensorChannel(i + 4).peer(ipeer);
+    }
+#endif    
   }
 }
 
