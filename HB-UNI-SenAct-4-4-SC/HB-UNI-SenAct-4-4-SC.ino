@@ -169,7 +169,7 @@ class MixDevice : public ChannelDevice<Hal, VirtBaseChannel<Hal, SwList0>, 8, Sw
     }
 
     virtual void configChanged () {
-      if ( /*this->getSwList0().cycleInfoMsg() ==*/ true ) {
+      if ( this->getList0().cycleInfoMsg() == true ) {
         DPRINTLN("Activate Cycle Msg");
         sysclock.cancel(cycle);
         cycle.set(CYCLETIME);
